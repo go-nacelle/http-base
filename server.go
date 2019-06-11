@@ -15,7 +15,7 @@ import (
 type (
 	Server struct {
 		Logger          nacelle.Logger           `service:"logger"`
-		Services        nacelle.ServiceContainer `service:"container"`
+		Services        nacelle.ServiceContainer `service:"services"`
 		Health          nacelle.Health           `service:"health"`
 		tagModifiers    []nacelle.TagModifier
 		initializer     ServerInitializer
