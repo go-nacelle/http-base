@@ -10,7 +10,7 @@ For a more full-featured HTTP server framework built on nacelle, see [chevron](h
 
 The supplied server process is an abstract HTTP/HTTPS server whose behavior is determined by a supplied `ServerInitializer` interface. This interface has only an `Init` method that receives application config as well as the HTTP server instance, allowing handlers to be registered before the server accepts clients. There is an [example](./example) included in this repository.
 
-The following options can be supplied to teh server constructor to tune its behavior.
+The following options can be supplied to the server constructor to tune its behavior.
 
 - **WithTagModifiers** registers the tag modifiers to be used when loading process configuration (see [below](#Configuration)). This can be used to change default hosts and ports, or prefix all target environment variables in the case where more than one HTTP server is registered per application (e.g. health server and application server, data plane and control plane server).
 
