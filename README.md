@@ -1,42 +1,29 @@
-# Nacelle Base HTTP Process
+# Nacelle Base HTTP Process [![GoDoc](https://godoc.org/github.com/go-nacelle/httpbase?status.svg)] [![CircleCI](https://circleci.com/gh/go-nacelle/httpbase.svg?style=svg)](https://circleci.com/gh/go-nacelle/httpbase) [![Coverage Status](https://coveralls.io/repos/github/go-nacelle/httpbase/badge.svg?branch=master)](https://coveralls.io/github/go-nacelle/httpbase?branch=master)
 
-[![CircleCI](https://circleci.com/gh/go-nacelle/httpbase.svg?style=svg)](https://circleci.com/gh/go-nacelle/httpbase)
-[![Coverage Status](https://coveralls.io/repos/github/go-nacelle/httpbase/badge.svg?branch=master)](https://coveralls.io/github/go-nacelle/httpbase?branch=master)
+Abstract HTTP server process for nacelle.
 
-This package contains a base process implementation for an HTTP server. For a more
-full-featured HTTP framework, see [chevron](https://github.com/go-nacelle/chevron).
+---
 
-## Usage
+For a more full-featured HTTP server framework built on nacelle, see [chevron](https://github.com/go-nacelle/chevron).
 
-To use the server, initialize a process by passing a Server Initializer to the `NewServer`
-constructor. A server initializer is an object with an `Init` method that takes a nacelle
-config object (as all process initializer methods do) as well as an `*http.Server`. This
-*hook* is provided so the the application can independently configure the server's HTTP
-handler.
+### Usage
 
-The server initializer will have services injected and will receive the nacelle config
-object on initialization as if it were a process.
+The supplied server process is an abstract HTTP/HTTPS server whose behavior is determined by a supplied `ServerInitializer` interface. This interface has only an `Init` method that receives application config as well as the HTTP server instance, allowing handlers to be registered before the server accepts clients. There is an [example](./example) included in this repository.
 
-To get a better understanding of the full usage, see the
-[example](https://github.com/go-nacelle/tree/master/examples/http).
+The following options can be supplied to teh server constructor to tune its behavior.
 
-## Configuration
+- **WithTagModifiers** registers the tag modifiers to be used when loading process configuration (see [below](#Configuration)). This can be used to change default hosts and ports, or prefix all target environment variables in the case where more than one HTTP server is registered per application (e.g. health server and application server, data plane and control plane server).
+
+### Configuration
 
 The default process behavior can be configured by the following environment variables.
 
 | Environment Variable  | Default | Description |
 | --------------------- | ------- | ----------- |
-| HTTP_HOST             | 0.0.0.0 | The host on which the server accepts clients. |
-| HTTP_PORT             | 5000    | The port on which the server accepts clients. |
-| HTTP_CERT_FILE        |         | An absolute path to a cert file. |
-| HTTP_KEY_FILE         |         | An absolute path to a key file. |
-| HTTP_SHUTDOWN_TIMEOUT | 5       | The duration (in seconds) to allow for a graceful shutdown. |
+| HTTP_HOST             | 0.0.0.0 | The host on which to accept connections. |
+| HTTP_PORT             | 5000    | The port on which to accept connections. |
+| HTTP_CERT_FILE        |         | The path to the TLS cert file. |
+| HTTP_KEY_FILE         |         | The path to the TLS key file. |
+| HTTP_SHUTDOWN_TIMEOUT | 5       | The time (in seconds) the server can spend in a graceful shutdown. |
 
-If both a cert file and key file paths are provided, the server will serve TLS. It is an
-error to provide a path to a cert file or a path to a key file but not both.
-
-## Using Multiple Servers
-
-In order to run multiple HTTP servers, tag modifiers can be applied during config
-registration. For more details on how to do this, see the
-[example](https://github.com/go-nacelle/tree/master/examples/multi-http).
+The one of `HTTP_CERT_FILE` and `HTTP_KEY_FILE` are set, then they must both be set. Setting these will start a TLS server.
