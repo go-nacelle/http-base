@@ -3,16 +3,19 @@ package httpbase
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
-	"os"
 
 	"github.com/aphistic/sweet"
-	. "github.com/onsi/gomega"
-
 	"github.com/go-nacelle/nacelle"
+	. "github.com/onsi/gomega"
 )
 
 type ServerSuite struct{}
+
+var testConfig = nacelle.NewConfig(nacelle.NewTestEnvSourcer(map[string]string{
+	"http_port": "0",
+}))
 
 func (s *ServerSuite) TestServeAndStop(t sweet.T) {
 	server := makeHTTPServer(func(config nacelle.Config, server *http.Server) error {
@@ -29,10 +32,7 @@ func (s *ServerSuite) TestServeAndStop(t sweet.T) {
 		return nil
 	})
 
-	os.Setenv("HTTP_PORT", "0")
-	defer os.Clearenv()
-
-	err := server.Init(makeConfig(&Config{}))
+	err := server.Init(testConfig)
 	Expect(err).To(BeNil())
 
 	go server.Start()
@@ -54,42 +54,22 @@ func (s *ServerSuite) TestServeAndStop(t sweet.T) {
 	Expect(data).To(Equal([]byte("bar")))
 }
 
-func (s *ServerSuite) TestBadConfig(t sweet.T) {
-	server := makeHTTPServer(func(config nacelle.Config, server *http.Server) error {
-		return nil
-	})
-
-	config := makeConfig(&Config{
-		HTTPCertFile: "only me!",
-	})
-
-	server.Logger = nacelle.NewNilLogger()
-	server.Health = nacelle.NewHealth()
-	Expect(server.Init(config)).To(MatchError("cert file and key file must both be supplied or both be omitted"))
-}
-
 func (s *ServerSuite) TestBadInjection(t sweet.T) {
 	server := NewServer(&badInjectionHTTPInitializer{})
 	server.Services = makeBadContainer()
 	server.Health = nacelle.NewHealth()
 
-	os.Setenv("HTTP_PORT", "0")
-	defer os.Clearenv()
-
-	err := server.Init(makeConfig(&Config{}))
+	err := server.Init(testConfig)
 	Expect(err.Error()).To(ContainSubstring("ServiceA"))
 }
 
 func (s *ServerSuite) TestInitError(t sweet.T) {
 	server := makeHTTPServer(func(config nacelle.Config, server *http.Server) error {
-		return fmt.Errorf("utoh")
+		return fmt.Errorf("oops")
 	})
 
-	os.Setenv("HTTP_PORT", "0")
-	defer os.Clearenv()
-
-	err := server.Init(makeConfig(&Config{}))
-	Expect(err).To(MatchError("utoh"))
+	err := server.Init(testConfig)
+	Expect(err).To(MatchError("oops"))
 }
 
 //
@@ -103,8 +83,15 @@ func makeHTTPServer(initializer func(nacelle.Config, *http.Server) error) *Serve
 	return server
 }
 
+func getDynamicPort(listener net.Listener) int {
+	return listener.Addr().(*net.TCPAddr).Port
+}
+
 //
 // Bad Injection
+
+type A struct{ X int }
+type B struct{ X float64 }
 
 type badInjectionHTTPInitializer struct {
 	ServiceA *A `service:"A"`
@@ -112,4 +99,10 @@ type badInjectionHTTPInitializer struct {
 
 func (i *badInjectionHTTPInitializer) Init(nacelle.Config, *http.Server) error {
 	return nil
+}
+
+func makeBadContainer() nacelle.ServiceContainer {
+	container := nacelle.NewServiceContainer()
+	container.Set("A", &B{})
+	return container
 }
