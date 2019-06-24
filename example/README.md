@@ -4,7 +4,7 @@ A trivial example application to showcase the [httpbase](https://github.com/go-n
 
 ## Overview
 
-This example application uses Redis to provide a simple string get/set API over HTTP. The **main** function boots [nacelle](https://github.com/go-nacelle) with a initializer that dials Redis and a server initializer for the process provided by this library. The connection created by the former is injected into the later.
+This example application uses Redis to provide a simple string get/set API over HTTP. The **main** function boots [nacelle](https://github.com/go-nacelle/nacelle) with a initializer that dials Redis and a server initializer for the process provided by this library. The connection created by the former is injected into the later.
 
 ## Building and Running
 
