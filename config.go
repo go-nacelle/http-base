@@ -6,11 +6,11 @@ import (
 )
 
 type Config struct {
-	HTTPHost           string `env:"http_host" file:"http_host" default:"0.0.0.0"`
-	HTTPPort           int    `env:"http_port" file:"http_port" default:"5000"`
-	HTTPCertFile       string `env:"http_cert_file" file:"http_cert_file"`
-	HTTPKeyFile        string `env:"http_key_file" file:"http_key_file"`
-	RawShutdownTimeout int    `env:"http_shutdown_timeout" file:"http_shutdown_timeout" default:"5"`
+	HTTPHost           string `env:"http_host" default:"0.0.0.0"`
+	HTTPPort           int    `env:"http_port" default:"5000"`
+	HTTPCertFile       string `env:"http_cert_file"`
+	HTTPKeyFile        string `env:"http_key_file"`
+	RawShutdownTimeout int    `env:"http_shutdown_timeout" default:"5"`
 
 	ShutdownTimeout time.Duration
 }
