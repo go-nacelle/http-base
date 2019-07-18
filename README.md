@@ -4,7 +4,7 @@ Abstract HTTP server process for nacelle.
 
 ---
 
-For a more full-featured HTTP server framework built on nacelle, see [chevron](https://github.com/go-nacelle/chevron).
+For a more full-featured HTTP server framework built on nacelle, see [chevron](/docs/frameworks/chevron).
 
 ### Usage
 
