@@ -4,15 +4,63 @@ Abstract HTTP server process for nacelle.
 
 ---
 
-For a more full-featured HTTP server framework built on nacelle, see [chevron](/docs/frameworks/chevron).
+This library supplies an abstract HTTP server [process](https://nacelle.dev/docs/core/process) whose behavior can be configured by implementing a `ServerInitializer` interface. For a more full-featured HTTP server framework built on nacelle, see [chevron](/docs/frameworks/chevron).
 
-### Usage
+You can see an additional example of an HTTP process in the [example repository](https://github.com/go-nacelle/example), specifically the [server initializer](https://github.com/go-nacelle/example/blob/843979aaa86786784a1ca3646e8d0d1f69e29c65/cmd/http-api/server_initializer.go#L23).
 
-The supplied server process is an abstract HTTP/HTTPS server whose behavior is determined by a supplied `ServerInitializer` interface. This interface has only an `Init` method that receives application config as well as the HTTP server instance, allowing handlers to be registered before the server accepts clients. There is an [example](./example) included in this repository.
+### Process
+
+An HTTP process is created by supplying an initializer, described [below](https://nacelle.dev/docs/base-processes/httpbase#server-initializer), that controls its behavior.
+
+```go
+server := httpbase.NewServer(NewServerInitializer(), options...)
+```
+
+### Server Initializer
+
+A server initializer is a struct with an `Init` method that takes a config object and an [http.Server](https://golang.org/pkg/net/http/#Server) as parameters.  This method may return an error value, which signals a fatal error to the process that runs it. This method provides an extension point to register handlers to the server instance before the process accepts connections.
+
+The following example registers an HTTP handler function to the server that will handle all incoming requests. Each request atomically increments a request counter on the containing initializer struct and returns its new value. In more complex applications, an HTTP router, such as [gorilla/mux](https://github.com/gorilla/mux) should likely be used.
+
+```go
+type Initializer struct {
+    requests uint
+}
+
+func (i *Initializer) Init(config nacelle.Config, server *http.Server) error {
+    server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        value := atomic.AddUint32(&i.requests)
+        w.WriteHeader(http.StatusOK)
+        w.Write([]byte(fmt.Sprintf("Hello, #%d!\n", value)))
+    })
+
+    return nil
+}
+```
+
+#### Initializer Function
+
+A simple server initializer stuct that does not need additional methods, state, or dependency instances injected via a service container can use the server initializer function wrapper instead.
+
+```go
+ServerInitializerFunc(func(config nacelle.Config, server *http.Server) error {
+    server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.WriteHeader(http.StatusOK)
+        w.Write([]byte("Hello, World!\n"))
+    })
+
+    return nil
+})
+```
+
+### Server Process Options
 
 The following options can be supplied to the server constructor to tune its behavior.
 
-- **WithTagModifiers** registers the tag modifiers to be used when loading process configuration (see [below](#Configuration)). This can be used to change default hosts and ports, or prefix all target environment variables in the case where more than one HTTP server is registered per application (e.g. health server and application server, data plane and control plane server).
+<dl>
+  <dd>WithTagModifiers</dd>
+  <dt><a href="https://godoc.org/github.com/go-nacelle/httpbase#WithTagModifiers">WithTagModifiers</a> registers the tag modifiers to be used when loading process configuration (see [below](#Configuration)). This can be used to change default hosts and ports, or prefix all target environment variables in the case where more than one HTTP server is registered per application (e.g. health server and application server, data plane and control plane server).</dt>
+</dl>
 
 ### Configuration
 
