@@ -6,19 +6,17 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"testing"
 
-	"github.com/aphistic/sweet"
 	"github.com/go-nacelle/nacelle"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
 )
-
-type ServerSuite struct{}
 
 var testConfig = nacelle.NewConfig(nacelle.NewTestEnvSourcer(map[string]string{
 	"http_port": "0",
 }))
 
-func (s *ServerSuite) TestServeAndStop(t sweet.T) {
+func TestServeAndStop(t *testing.T) {
 	server := makeHTTPServer(func(config nacelle.Config, server *http.Server) error {
 		server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path == "/users/foo" {
@@ -34,7 +32,7 @@ func (s *ServerSuite) TestServeAndStop(t sweet.T) {
 	})
 
 	err := server.Init(testConfig)
-	Expect(err).To(BeNil())
+	assert.Nil(t, err)
 
 	go server.Start()
 	defer server.Stop()
@@ -43,19 +41,19 @@ func (s *ServerSuite) TestServeAndStop(t sweet.T) {
 	url := fmt.Sprintf("http://localhost:%d/users/foo", getDynamicPort(server.listener))
 
 	req, err := http.NewRequest("GET", url, nil)
-	Expect(err).To(BeNil())
+	assert.Nil(t, err)
 
 	resp, err := http.DefaultClient.Do(req)
-	Expect(err).To(BeNil())
-	Expect(resp.StatusCode).To(Equal(http.StatusOK))
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	defer resp.Body.Close()
 	data, err := ioutil.ReadAll(resp.Body)
-	Expect(err).To(BeNil())
-	Expect(data).To(Equal([]byte("bar")))
+	assert.Nil(t, err)
+	assert.Equal(t, []byte("bar"), data)
 }
 
-func (s *ServerSuite) TestServeTLS(t sweet.T) {
+func TestServeTLS(t *testing.T) {
 	server := makeHTTPServer(func(config nacelle.Config, server *http.Server) error {
 		server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path == "/users/foo" {
@@ -76,7 +74,7 @@ func (s *ServerSuite) TestServeTLS(t sweet.T) {
 		"http_key_file":  "./internal/keys/server.key",
 	})))
 
-	Expect(err).To(BeNil())
+	assert.Nil(t, err)
 
 	go server.Start()
 	defer server.Stop()
@@ -85,7 +83,7 @@ func (s *ServerSuite) TestServeTLS(t sweet.T) {
 	url := fmt.Sprintf("https://localhost:%d/users/foo", getDynamicPort(server.listener))
 
 	req, err := http.NewRequest("GET", url, nil)
-	Expect(err).To(BeNil())
+	assert.Nil(t, err)
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
@@ -95,25 +93,25 @@ func (s *ServerSuite) TestServeTLS(t sweet.T) {
 
 	client := &http.Client{Transport: tr}
 	resp, err := client.Do(req)
-	Expect(err).To(BeNil())
-	Expect(resp.StatusCode).To(Equal(http.StatusOK))
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	defer resp.Body.Close()
 	data, err := ioutil.ReadAll(resp.Body)
-	Expect(err).To(BeNil())
-	Expect(data).To(Equal([]byte("bar")))
+	assert.Nil(t, err)
+	assert.Equal(t, []byte("bar"), data)
 }
 
-func (s *ServerSuite) TestBadInjection(t sweet.T) {
+func TestBadInjection(t *testing.T) {
 	server := NewServer(&badInjectionHTTPInitializer{})
 	server.Services = makeBadContainer()
 	server.Health = nacelle.NewHealth()
 
 	err := server.Init(testConfig)
-	Expect(err.Error()).To(ContainSubstring("ServiceA"))
+	assert.Contains(t, err.Error(), "ServiceA")
 }
 
-func (s *ServerSuite) TestTagModifiers(t sweet.T) {
+func TestTagModifiers(t *testing.T) {
 	server := NewServer(
 		ServerInitializerFunc(func(config nacelle.Config, server *http.Server) error {
 			return nil
@@ -129,17 +127,17 @@ func (s *ServerSuite) TestTagModifiers(t sweet.T) {
 		"prefix_http_port": "1234",
 	})))
 
-	Expect(err).To(BeNil())
-	Expect(server.port).To(Equal(1234))
+	assert.Nil(t, err)
+	assert.Equal(t, 1234, server.port)
 }
 
-func (s *ServerSuite) TestInitError(t sweet.T) {
+func TestInitError(t *testing.T) {
 	server := makeHTTPServer(func(config nacelle.Config, server *http.Server) error {
 		return fmt.Errorf("oops")
 	})
 
 	err := server.Init(testConfig)
-	Expect(err).To(MatchError("oops"))
+	assert.EqualError(t, err, "oops")
 }
 
 //
