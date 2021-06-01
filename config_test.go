@@ -1,25 +1,24 @@
 package httpbase
 
 import (
-	"github.com/aphistic/sweet"
-	. "github.com/onsi/gomega"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-type ConfigSuite struct{}
-
-func (s *ConfigSuite) TestHTTPCertConfiguration(t sweet.T) {
+func TestHTTPCertConfiguration(t *testing.T) {
 	// Non-TLS
 	c := &Config{}
-	Expect(c.PostLoad()).To(BeNil())
+	assert.Nil(t, c.PostLoad())
 
 	// Successful TLS Config
 	c = &Config{HTTPCertFile: "cert", HTTPKeyFile: "key"}
-	Expect(c.PostLoad()).To(BeNil())
+	assert.Nil(t, c.PostLoad())
 
 	// Incomplete
 	c = &Config{HTTPCertFile: "cert"}
-	Expect(c.PostLoad()).To(Equal(ErrBadCertConfig))
+	assert.Equal(t, ErrBadCertConfig, c.PostLoad())
 
 	c = &Config{HTTPKeyFile: "key"}
-	Expect(c.PostLoad()).To(Equal(ErrBadCertConfig))
+	assert.Equal(t, ErrBadCertConfig, c.PostLoad())
 }

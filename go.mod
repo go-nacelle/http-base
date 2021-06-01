@@ -1,9 +1,13 @@
 module github.com/go-nacelle/httpbase
 
 require (
-	github.com/aphistic/sweet v0.2.0
-	github.com/aphistic/sweet-junit v0.0.0-20190314030539-8d7e248096c2
-	github.com/go-nacelle/nacelle v1.0.1
-	github.com/google/uuid v1.1.1
-	github.com/onsi/gomega v1.5.0
+	github.com/derision-test/glock v0.0.0-20210316032053-f5b74334bb29 // indirect
+	github.com/go-nacelle/nacelle v1.2.0
+	github.com/google/uuid v1.2.0
+	github.com/mattn/go-isatty v0.0.13 // indirect
+	github.com/stretchr/testify v1.7.0
+	golang.org/x/sys v0.0.0-20210531080801-fdfd190a6549 // indirect
+	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
