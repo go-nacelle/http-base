@@ -1,5 +1,7 @@
 module github.com/go-nacelle/httpbase
 
+go 1.16
+
 require (
 	github.com/derision-test/glock v0.0.0-20210316032053-f5b74334bb29 // indirect
 	github.com/go-nacelle/nacelle v1.2.0
