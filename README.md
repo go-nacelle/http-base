@@ -1,4 +1,8 @@
-# Nacelle Base HTTP Process [![GoDoc](https://godoc.org/github.com/go-nacelle/httpbase?status.svg)](https://godoc.org/github.com/go-nacelle/httpbase) [![CircleCI](https://circleci.com/gh/go-nacelle/httpbase.svg?style=svg)](https://circleci.com/gh/go-nacelle/httpbase) [![Coverage Status](https://coveralls.io/repos/github/go-nacelle/httpbase/badge.svg?branch=master)](https://coveralls.io/github/go-nacelle/httpbase?branch=master)
+# Nacelle Base HTTP Process
+
+[![PkgGoDev](https://pkg.go.dev/badge/badge/github.com/go-nacelle/httpbase.svg)](https://pkg.go.dev/github.com/go-nacelle/httpbase)
+[![Build status](https://github.com/go-nacelle/httpbase/actions/workflows/test.yml/badge.svg)](https://github.com/go-nacelle/httpbase/actions/workflows/test.yml)
+[![Latest release](https://img.shields.io/github/release/go-nacelle/httpbase.svg)](https://github.com/go-nacelle/httpbase/releases/)
 
 Abstract HTTP server process for nacelle.
 
