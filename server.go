@@ -41,8 +41,6 @@ type (
 	ServerInitializerFunc func(context.Context, *http.Server) error
 )
 
-var _ process.Initializer = &Server{}
-
 func (f ServerInitializerFunc) Init(ctx context.Context, server *http.Server) error {
 	return f(ctx, server)
 }
