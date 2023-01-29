@@ -87,7 +87,7 @@ func (s *Server) Init(ctx context.Context) (err error) {
 	return s.initializer.Init(ctx, s.server)
 }
 
-func (s *Server) Start() error {
+func (s *Server) Start(ctx context.Context) error {
 	defer s.listener.Close()
 	defer s.server.Close()
 
@@ -120,7 +120,7 @@ func (s *Server) serveTLS() error {
 	return nil
 }
 
-func (s *Server) Stop() (err error) {
+func (s *Server) Stop(ctx context.Context) (err error) {
 	s.once.Do(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
 		defer cancel()
