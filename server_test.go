@@ -37,8 +37,8 @@ func TestServeAndStop(t *testing.T) {
 	err := server.Init(ctx)
 	assert.Nil(t, err)
 
-	go server.Start()
-	defer server.Stop()
+	go server.Start(ctx)
+	defer server.Stop(ctx)
 
 	// Hack internals to get the dynamic port (don't bind to one on host)
 	url := fmt.Sprintf("http://localhost:%d/users/foo", getDynamicPort(server.listener))
@@ -81,8 +81,8 @@ func TestServeTLS(t *testing.T) {
 
 	assert.Nil(t, err)
 
-	go server.Start()
-	defer server.Stop()
+	go server.Start(ctx)
+	defer server.Stop(ctx)
 
 	// Hack internals to get the dynamic port (don't bind to one on host)
 	url := fmt.Sprintf("https://localhost:%d/users/foo", getDynamicPort(server.listener))
