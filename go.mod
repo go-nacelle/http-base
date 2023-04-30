@@ -4,7 +4,6 @@ go 1.16
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
-	github.com/go-nacelle/nacelle v1.2.0
 	github.com/go-nacelle/nacelle/v2 v2.0.1
 	github.com/go-nacelle/process/v2 v2.0.1
 	github.com/go-nacelle/service/v2 v2.0.1
