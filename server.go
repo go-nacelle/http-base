@@ -8,15 +8,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-nacelle/nacelle"
+	"github.com/go-nacelle/nacelle/v2"
+	"github.com/go-nacelle/process/v2"
+	"github.com/go-nacelle/service/v2"
 	"github.com/google/uuid"
 )
 
 type (
 	Server struct {
-		Logger          nacelle.Logger           `service:"logger"`
-		Services        nacelle.ServiceContainer `service:"services"`
-		Health          nacelle.Health           `service:"health"`
+		Logger          nacelle.Logger            `service:"logger"`
+		Config          *nacelle.Config           `service:"config"`
+		Services        *nacelle.ServiceContainer `service:"services"`
+		Health          *nacelle.Health           `service:"health"`
 		tagModifiers    []nacelle.TagModifier
 		initializer     ServerInitializer
 		listener        *net.TCPListener
@@ -28,17 +31,18 @@ type (
 		keyFile         string
 		shutdownTimeout time.Duration
 		healthToken     healthToken
+		healthStatus    *process.HealthComponentStatus
 	}
 
 	ServerInitializer interface {
-		Init(nacelle.Config, *http.Server) error
+		Init(context.Context, *http.Server) error
 	}
 
-	ServerInitializerFunc func(nacelle.Config, *http.Server) error
+	ServerInitializerFunc func(context.Context, *http.Server) error
 )
 
-func (f ServerInitializerFunc) Init(config nacelle.Config, server *http.Server) error {
-	return f(config, server)
+func (f ServerInitializerFunc) Init(ctx context.Context, server *http.Server) error {
+	return f(ctx, server)
 }
 
 func NewServer(initializer ServerInitializer, configs ...ConfigFunc) *Server {
@@ -52,13 +56,15 @@ func NewServer(initializer ServerInitializer, configs ...ConfigFunc) *Server {
 	}
 }
 
-func (s *Server) Init(config nacelle.Config) (err error) {
-	if err := s.Health.AddReason(s.healthToken); err != nil {
+func (s *Server) Init(ctx context.Context) (err error) {
+	healthStatus, err := s.Health.Register(s.healthToken)
+	if err != nil {
 		return err
 	}
+	s.healthStatus = healthStatus
 
 	httpConfig := &Config{}
-	if err = config.Load(httpConfig, s.tagModifiers...); err != nil {
+	if err = s.Config.Load(httpConfig, s.tagModifiers...); err != nil {
 		return err
 	}
 
@@ -74,20 +80,18 @@ func (s *Server) Init(config nacelle.Config) (err error) {
 	s.keyFile = httpConfig.HTTPKeyFile
 	s.shutdownTimeout = httpConfig.ShutdownTimeout
 
-	if err := s.Services.Inject(s.initializer); err != nil {
+	if err := service.Inject(ctx, s.Services, s.initializer); err != nil {
 		return err
 	}
 
-	return s.initializer.Init(config, s.server)
+	return s.initializer.Init(ctx, s.server)
 }
 
-func (s *Server) Start() error {
+func (s *Server) Start(ctx context.Context) error {
 	defer s.listener.Close()
 	defer s.server.Close()
 
-	if err := s.Health.RemoveReason(s.healthToken); err != nil {
-		return err
-	}
+	s.healthStatus.Update(true)
 
 	if s.certFile != "" {
 		return s.serveTLS()
@@ -116,7 +120,7 @@ func (s *Server) serveTLS() error {
 	return nil
 }
 
-func (s *Server) Stop() (err error) {
+func (s *Server) Stop(ctx context.Context) (err error) {
 	s.once.Do(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
 		defer cancel()

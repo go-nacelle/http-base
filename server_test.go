@@ -1,6 +1,7 @@
 package httpbase
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
@@ -8,7 +9,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/go-nacelle/nacelle"
+	"github.com/go-nacelle/nacelle/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +18,7 @@ var testConfig = nacelle.NewConfig(nacelle.NewTestEnvSourcer(map[string]string{
 }))
 
 func TestServeAndStop(t *testing.T) {
-	server := makeHTTPServer(func(config nacelle.Config, server *http.Server) error {
+	server := makeHTTPServer(func(ctx context.Context, server *http.Server) error {
 		server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path == "/users/foo" {
 				w.WriteHeader(http.StatusOK)
@@ -30,12 +31,14 @@ func TestServeAndStop(t *testing.T) {
 
 		return nil
 	})
+	server.Config = testConfig
 
-	err := server.Init(testConfig)
+	ctx := context.Background()
+	err := server.Init(ctx)
 	assert.Nil(t, err)
 
-	go server.Start()
-	defer server.Stop()
+	go server.Start(ctx)
+	defer server.Stop(ctx)
 
 	// Hack internals to get the dynamic port (don't bind to one on host)
 	url := fmt.Sprintf("http://localhost:%d/users/foo", getDynamicPort(server.listener))
@@ -54,7 +57,7 @@ func TestServeAndStop(t *testing.T) {
 }
 
 func TestServeTLS(t *testing.T) {
-	server := makeHTTPServer(func(config nacelle.Config, server *http.Server) error {
+	server := makeHTTPServer(func(ctx context.Context, server *http.Server) error {
 		server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path == "/users/foo" {
 				w.WriteHeader(http.StatusOK)
@@ -67,17 +70,19 @@ func TestServeTLS(t *testing.T) {
 
 		return nil
 	})
-
-	err := server.Init(nacelle.NewConfig(nacelle.NewTestEnvSourcer(map[string]string{
+	server.Config = nacelle.NewConfig(nacelle.NewTestEnvSourcer(map[string]string{
 		"http_port":      "0",
 		"http_cert_file": "./internal/keys/server.crt",
 		"http_key_file":  "./internal/keys/server.key",
-	})))
+	}))
+
+	ctx := context.Background()
+	err := server.Init(ctx)
 
 	assert.Nil(t, err)
 
-	go server.Start()
-	defer server.Stop()
+	go server.Start(ctx)
+	defer server.Stop(ctx)
 
 	// Hack internals to get the dynamic port (don't bind to one on host)
 	url := fmt.Sprintf("https://localhost:%d/users/foo", getDynamicPort(server.listener))
@@ -106,14 +111,16 @@ func TestBadInjection(t *testing.T) {
 	server := NewServer(&badInjectionHTTPInitializer{})
 	server.Services = makeBadContainer()
 	server.Health = nacelle.NewHealth()
+	server.Config = testConfig
 
-	err := server.Init(testConfig)
+	ctx := context.Background()
+	err := server.Init(ctx)
 	assert.Contains(t, err.Error(), "ServiceA")
 }
 
 func TestTagModifiers(t *testing.T) {
 	server := NewServer(
-		ServerInitializerFunc(func(config nacelle.Config, server *http.Server) error {
+		ServerInitializerFunc(func(ctx context.Context, server *http.Server) error {
 			return nil
 		}),
 		WithTagModifiers(nacelle.NewEnvTagPrefixer("prefix")),
@@ -123,27 +130,32 @@ func TestTagModifiers(t *testing.T) {
 	server.Services = nacelle.NewServiceContainer()
 	server.Health = nacelle.NewHealth()
 
-	err := server.Init(nacelle.NewConfig(nacelle.NewTestEnvSourcer(map[string]string{
+	server.Config = nacelle.NewConfig(nacelle.NewTestEnvSourcer(map[string]string{
 		"prefix_http_port": "1234",
-	})))
+	}))
+
+	ctx := context.Background()
+	err := server.Init(ctx)
 
 	assert.Nil(t, err)
 	assert.Equal(t, 1234, server.port)
 }
 
 func TestInitError(t *testing.T) {
-	server := makeHTTPServer(func(config nacelle.Config, server *http.Server) error {
+	server := makeHTTPServer(func(ctx context.Context, server *http.Server) error {
 		return fmt.Errorf("oops")
 	})
+	server.Config = testConfig
 
-	err := server.Init(testConfig)
+	ctx := context.Background()
+	err := server.Init(ctx)
 	assert.EqualError(t, err, "oops")
 }
 
 //
 // Helpers
 
-func makeHTTPServer(initializer func(nacelle.Config, *http.Server) error) *Server {
+func makeHTTPServer(initializer func(context.Context, *http.Server) error) *Server {
 	server := NewServer(ServerInitializerFunc(initializer))
 	server.Logger = nacelle.NewNilLogger()
 	server.Services = nacelle.NewServiceContainer()
@@ -165,11 +177,11 @@ type badInjectionHTTPInitializer struct {
 	ServiceA *A `service:"A"`
 }
 
-func (i *badInjectionHTTPInitializer) Init(nacelle.Config, *http.Server) error {
+func (i *badInjectionHTTPInitializer) Init(context.Context, *http.Server) error {
 	return nil
 }
 
-func makeBadContainer() nacelle.ServiceContainer {
+func makeBadContainer() *nacelle.ServiceContainer {
 	container := nacelle.NewServiceContainer()
 	container.Set("A", &B{})
 	return container

@@ -1,7 +1,7 @@
 package httpbase
 
 import (
-	"github.com/go-nacelle/nacelle"
+	"github.com/go-nacelle/nacelle/v2"
 )
 
 type (
