@@ -37,7 +37,7 @@ func TestServeAndStop(t *testing.T) {
 	err := server.Init(ctx)
 	assert.Nil(t, err)
 
-	go server.Start(ctx)
+	go server.Run(ctx)
 	defer server.Stop(ctx)
 
 	// Hack internals to get the dynamic port (don't bind to one on host)
@@ -81,7 +81,7 @@ func TestServeTLS(t *testing.T) {
 
 	assert.Nil(t, err)
 
-	go server.Start(ctx)
+	go server.Run(ctx)
 	defer server.Stop(ctx)
 
 	// Hack internals to get the dynamic port (don't bind to one on host)
