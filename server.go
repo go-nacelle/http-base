@@ -87,7 +87,7 @@ func (s *Server) Init(ctx context.Context) (err error) {
 	return s.initializer.Init(ctx, s.server)
 }
 
-func (s *Server) Start(ctx context.Context) error {
+func (s *Server) Run(ctx context.Context) error {
 	defer s.listener.Close()
 	defer s.server.Close()
 
